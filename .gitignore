@@ -15,8 +15,8 @@ test.cov
 
 # Build artifacts
 artifacts/
-broker
-platform
+/broker
+/platform
 
 # IDE
 .idea/
