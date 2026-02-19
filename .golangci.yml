@@ -1,0 +1,134 @@
+# golangci-lint v2 configuration
+version: "2"
+
+# Run configuration
+run:
+  timeout: 5m
+  tests: true
+
+# Linters configuration
+linters:
+  enable:
+  - asasalint # Check for pass []any as any in variadic func(...any).
+  - asciicheck # Checks that all code identifiers does not have non-ASCII symbols in the name.
+  - bidichk # Checks for dangerous unicode character sequences.
+  - bodyclose # Checks whether HTTP response body is closed successfully.
+  - canonicalheader # Canonicalheader checks whether net/http.Header uses canonical header.
+  - containedctx # Detects struct contained context.Context field.
+  - contextcheck # Check whether the function uses a non-inherited context.
+  - copyloopvar # Detects places where loop variables are copied.
+  - cyclop # Checks function and package cyclomatic complexity.
+  - decorder # Check declaration order and count of types, constants, variables and functions.
+  - dogsled # Checks assignments with too many blank identifiers.
+  - dupword # Checks for duplicate words in the source code.
+  - durationcheck # Check for two durations multiplied together.
+  - err113 # Check errors handling expressions.
+  - errchkjson # Checks types passed to json encoding functions.
+  - errname # Checks that sentinel errors are prefixed with Err.
+  - errorlint # Find code that can cause problems with error wrapping.
+  - exhaustive # Check exhaustiveness of enum switch statements.
+  - fatcontext # Detects nested contexts in loops and function literals.
+  - forbidigo # Forbids identifiers.
+  - forcetypeassert # Find forced type assertions.
+  - funlen # Checks for long functions.
+  - gocheckcompilerdirectives # Checks that go compiler directive comments are valid.
+  - gochecknoglobals # Check that no global variables exist.
+  - gochecknoinits # Checks that no init functions are present.
+  - gochecksumtype # Run exhaustiveness checks on Go sum types.
+  - gocognit # Computes and checks cognitive complexity of functions.
+  - goconst # Finds repeated strings that could be replaced by a constant.
+  - gocritic # Diagnostics that check for bugs, performance and style issues.
+  - gocyclo # Computes and checks cyclomatic complexity of functions.
+  - godot # Check if comments end in a period.
+  - godox # Detects usage of FIXME, TODO and other keywords inside comments.
+  - gomoddirectives # Manage the use of replace, retract, and excludes directives.
+  - goprintffuncname # Checks that printf-like functions are named with f at the end.
+  - gosec # Inspects source code for security problems.
+  - grouper # Analyze expression groups.
+  - iface # Detect incorrect use of interfaces.
+  - importas # Enforces consistent import aliases.
+  - inamedparam # Reports interfaces with unnamed method parameters.
+  - interfacebloat # Checks the number of methods inside an interface.
+  - intrange # Find places where for loops could use an integer range.
+  - ireturn # Accept Interfaces, Return Concrete Types.
+  - makezero # Find slice declarations with non-zero initial length.
+  - mirror # Reports wrong mirror patterns of bytes/strings usage.
+  - misspell # Finds commonly misspelled English words.
+  - mnd # Detect magic numbers.
+  - musttag # Enforce field tags in (un)marshaled structs.
+  - nakedret # Checks that functions with naked returns are not too long.
+  - nestif # Reports deeply nested if statements.
+  - nilerr # Find code that returns nil even if it checks that error is not nil.
+  - nlreturn # Checks for a new line before return and branch statements.
+  - noctx # Detects function and method with missing context.Context.
+  - nonamedreturns # Reports all named returns.
+  - nosprintfhostport # Checks for misuse of Sprintf to construct host:port.
+  - paralleltest # Detects missing usage of t.Parallel().
+  - perfsprint # Checks that fmt.Sprintf can be replaced with faster alternative.
+  - prealloc # Find slice declarations that could be pre-allocated.
+  - predeclared # Find code that shadows Go predeclared identifiers.
+  - protogetter # Reports direct reads from proto message fields when getters should be used.
+  - reassign # Checks that package variables are not reassigned.
+  - recvcheck # Checks for receiver type consistency.
+  - sloglint # Ensure consistent code style when using log/slog.
+  - sqlclosecheck # Checks that sql.Rows, sql.Stmt are closed.
+  - tagalign # Check that struct tags are well aligned.
+  - testableexamples # Checks if examples are testable.
+  - testifylint # Checks usage of github.com/stretchr/testify.
+  - testpackage # Makes you use a separate _test package.
+  - thelper # Detects tests helpers not starting with t.Helper().
+  - tparallel # Detects inappropriate usage of t.Parallel().
+  - unconvert # Remove unnecessary type conversions.
+  - unparam # Reports unused function parameters.
+  - usestdlibvars # Detect the possibility to use variables/constants from stdlib.
+  - usetesting # Reports uses of functions with replacement inside testing package.
+  - varnamelen # Checks that variable name length matches scope.
+  - wastedassign # Finds wasted assignment statements.
+  - whitespace # Checks for unnecessary newlines at start and end of functions.
+  - wrapcheck # Checks that errors returned from external packages are wrapped.
+
+  settings:
+    funlen:
+      lines: 80
+      statements: 60
+
+    cyclop:
+      max-complexity: 16
+      package-average: 0.0
+
+    ireturn:
+      allow:
+        - anon
+        - error
+        - empty
+        - stdlib
+        - github.com/fivetwenty-io/osbapi/v2/pkg/osbapi.Client
+        - github.com/fivetwenty-io/osbapi/v2/pkg/osbapi.ServiceBroker
+
+    interfacebloat:
+      max: 12
+
+    gosec:
+      excludes:
+        - G117
+
+  exclusions:
+    paths:
+      - vendor
+      - tmp
+    rules:
+      - linters:
+          - gosec
+        text: "G101"
+        path: "_test\\.go"
+
+# Formatters configuration
+formatters:
+  exclusions:
+    paths:
+      - vendor
+      - tmp
+
+# Issues configuration
+issues:
+  max-same-issues: 3

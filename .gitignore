@@ -1,0 +1,36 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of `go coverage`
+coverage.out
+coverage.html
+test.cov
+
+# Build artifacts
+artifacts/
+broker
+platform
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Vendor (if used)
+vendor/
+
+# Temporary files
+tmp/
