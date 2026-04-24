@@ -20,6 +20,7 @@ type mockBroker struct {
 	provisionErr     error
 	lastInstanceID   string
 	lastProvisionReq osbapi.ProvisionRequest
+	lastProvisionCtx context.Context
 
 	// Deprovision
 	deprovisionResp    osbapi.DeprovisionResponse
@@ -74,9 +75,10 @@ func (m *mockBroker) GetCatalog(_ context.Context) (*osbapi.Catalog, error) {
 	return m.catalog, m.catalogErr
 }
 
-func (m *mockBroker) Provision(_ context.Context, instanceID string, req osbapi.ProvisionRequest, _ bool) (osbapi.ProvisionResponse, bool, error) {
+func (m *mockBroker) Provision(ctx context.Context, instanceID string, req osbapi.ProvisionRequest, _ bool) (osbapi.ProvisionResponse, bool, error) {
 	m.lastInstanceID = instanceID
 	m.lastProvisionReq = req
+	m.lastProvisionCtx = ctx
 	return m.provisionResp, m.provisionAsync, m.provisionErr
 }
 

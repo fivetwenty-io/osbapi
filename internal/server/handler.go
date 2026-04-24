@@ -115,6 +115,23 @@ func (h *handler) applyMiddleware(next http.Handler) http.Handler {
 			}
 		}
 
+		// 3. Originating identity extraction (OSB v2.17 §5.1).
+		// The header is optional; absent = leave context untouched. A malformed
+		// header is logged and dropped so a misbehaving platform cannot block
+		// otherwise-valid traffic — brokers that need the identity should
+		// check OriginatingIdentityFromContext and treat absence as untrusted.
+		if raw := r.Header.Get(osbapi.HeaderOriginatingIdentity); raw != "" {
+			id, err := osbapi.DecodeOriginatingIdentity(raw)
+			if err != nil {
+				if h.logger != nil {
+					h.logger.Warn("invalid X-Broker-API-Originating-Identity header",
+						map[string]any{"error": err.Error()})
+				}
+			} else {
+				r = r.WithContext(osbapi.ContextWithOriginatingIdentity(r.Context(), id))
+			}
+		}
+
 		next.ServeHTTP(w, r)
 	})
 }
