@@ -271,6 +271,12 @@ The `osbapi` package defines sentinel errors for common failure modes. Broker im
 | `ErrPlanQuotaExceeded` | 422 | Plan quota has been exceeded |
 | `ErrInvalidParameters` | 400 | Parameters failed validation |
 
+### Server Errors
+
+When a broker returns an error that is neither an `*osbapi.OSBError` nor one of the mapped sentinels, the handler answers with a 500 whose `description` is the error's message, so the platform can show the operator what actually failed. Any error that ends in a 5xx, including an `*osbapi.OSBError` with no status code, is also logged at error level with the operation, method, path, instance and binding IDs, and the full error message. Logs go to the `Logger` passed with `broker.WithLogger`, and to `slog.Default()` when none is configured.
+
+Because the message reaches the platform verbatim, brokers should keep credentials and other secrets out of the errors they return.
+
 ### Classification Helpers
 
 Convenience functions for classifying errors without inspecting the type directly:
