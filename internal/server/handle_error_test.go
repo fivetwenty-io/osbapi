@@ -261,3 +261,56 @@ func TestBindHandler_AlreadyExists_EmptyResponse_Conflict(t *testing.T) {
 	osbErr := decodeBody[osbapi.OSBError](t, resp)
 	assert.Equal(t, osbapi.ErrBindingAlreadyExists.Error(), osbErr.Description)
 }
+
+// TestHandleError_SentinelStatuses_OtherOperations verifies that the same
+// sentinel mappings apply to deprovision and unbind, not only provision.
+func TestHandleError_SentinelStatuses_OtherOperations(t *testing.T) {
+	t.Parallel()
+
+	errs := []struct {
+		name   string
+		err    error
+		status int
+	}{
+		{"unauthorized", osbapi.ErrUnauthorized, http.StatusUnauthorized},
+		{"plan quota exceeded", osbapi.ErrPlanQuotaExceeded, http.StatusUnprocessableEntity},
+		{"invalid parameters", osbapi.ErrInvalidParameters, http.StatusBadRequest},
+		{"binding already exists", osbapi.ErrBindingAlreadyExists, http.StatusConflict},
+	}
+
+	operations := []struct {
+		name   string
+		path   string
+		broker func(err error) *mockBroker
+	}{
+		{
+			"deprovision",
+			"/v2/service_instances/inst-1?service_id=svc-1&plan_id=plan-1",
+			func(err error) *mockBroker { return &mockBroker{deprovisionErr: err} },
+		},
+		{
+			"unbind",
+			"/v2/service_instances/inst-1/service_bindings/binding-1?service_id=svc-1&plan_id=plan-1",
+			func(err error) *mockBroker { return &mockBroker{unbindErr: err} },
+		},
+	}
+
+	for _, op := range operations {
+		for _, tt := range errs {
+			t.Run(op.name+"/"+tt.name, func(t *testing.T) {
+				t.Parallel()
+
+				logger := &recordingLogger{}
+				ts := newTestServer(t, op.broker(tt.err), server.WithLogger(logger))
+				defer ts.Close()
+
+				resp := doRequest(t, http.MethodDelete, ts.URL+op.path, nil)
+				assert.Equal(t, tt.status, resp.StatusCode)
+
+				osbErr := decodeBody[osbapi.OSBError](t, resp)
+				assert.Equal(t, tt.err.Error(), osbErr.Description)
+				assert.Empty(t, logger.snapshot())
+			})
+		}
+	}
+}

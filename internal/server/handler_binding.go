@@ -29,6 +29,9 @@ func (h *handler) bindHandler(w http.ResponseWriter, r *http.Request) {
 		// An identical binding comes back with its existing response and
 		// answers 200. A conflicting binding comes back with no response,
 		// so it falls through to the 409 mapping.
+		// Convention for brokers: return the existing binding for an identical
+		// rebind, which answers 200, and an empty BindResponse for a conflict,
+		// which answers 409.
 		if errors.Is(err, osbapi.ErrBindingAlreadyExists) && !reflect.DeepEqual(resp, osbapi.BindResponse{}) {
 			writeJSON(w, http.StatusOK, resp)
 			return
