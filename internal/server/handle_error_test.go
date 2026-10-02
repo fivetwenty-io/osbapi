@@ -203,3 +203,61 @@ func TestHandleError_DefaultLogger_UsesSlogDefault(t *testing.T) {
 	assert.Contains(t, out, "binding_id=binding-1")
 	assert.Contains(t, out, "MISCONF Valkey")
 }
+
+// TestHandleError_SentinelStatuses verifies that each sentinel documented in
+// the README maps to its status code and carries the error text as the
+// description.
+func TestHandleError_SentinelStatuses(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name   string
+		err    error
+		status int
+	}{
+		{"unauthorized", osbapi.ErrUnauthorized, http.StatusUnauthorized},
+		{"plan quota exceeded", osbapi.ErrPlanQuotaExceeded, http.StatusUnprocessableEntity},
+		{"invalid parameters", osbapi.ErrInvalidParameters, http.StatusBadRequest},
+		{"wrapped quota", fmt.Errorf("provision: %w", osbapi.ErrPlanQuotaExceeded), http.StatusUnprocessableEntity},
+		{"binding already exists", osbapi.ErrBindingAlreadyExists, http.StatusConflict},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			broker := &mockBroker{provisionErr: tt.err}
+			logger := &recordingLogger{}
+
+			ts := newTestServer(t, broker, server.WithLogger(logger))
+			defer ts.Close()
+
+			req := osbapi.ProvisionRequest{ServiceID: "svc-1", PlanID: "plan-1"}
+			resp := doRequest(t, http.MethodPut, ts.URL+"/v2/service_instances/inst-1", req)
+			assert.Equal(t, tt.status, resp.StatusCode)
+
+			osbErr := decodeBody[osbapi.OSBError](t, resp)
+			assert.Equal(t, tt.err.Error(), osbErr.Description)
+			assert.Empty(t, logger.snapshot())
+		})
+	}
+}
+
+// TestBindHandler_AlreadyExists_EmptyResponse_Conflict verifies that a
+// conflicting binding, which the broker reports with no response, answers 409.
+func TestBindHandler_AlreadyExists_EmptyResponse_Conflict(t *testing.T) {
+	t.Parallel()
+
+	broker := &mockBroker{bindErr: osbapi.ErrBindingAlreadyExists}
+
+	ts := newTestServer(t, broker)
+	defer ts.Close()
+
+	body := osbapi.BindRequest{ServiceID: "svc-1", PlanID: "plan-1"}
+	resp := doRequest(t, http.MethodPut,
+		ts.URL+"/v2/service_instances/inst-abc/service_bindings/bind-123", body)
+	assert.Equal(t, http.StatusConflict, resp.StatusCode)
+
+	osbErr := decodeBody[osbapi.OSBError](t, resp)
+	assert.Equal(t, osbapi.ErrBindingAlreadyExists.Error(), osbErr.Description)
+}

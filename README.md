@@ -264,7 +264,7 @@ The `osbapi` package defines sentinel errors for common failure modes. Broker im
 | `ErrGoneError` | 410 | Resource has been deleted |
 | `ErrBadRequest` | 400 | Malformed or invalid request |
 | `ErrInstanceAlreadyExists` | 409 | Instance already exists with different config |
-| `ErrBindingAlreadyExists` | 409 | Binding already exists with different config |
+| `ErrBindingAlreadyExists` | 200 or 409 | Binding already exists. Bind answers 200 with the returned response when the broker returns a non-empty `BindResponse` alongside the error (identical configuration), and 409 when the response is empty (conflicting configuration) |
 | `ErrMaintenanceInfoConflict` | 422 | Maintenance info version mismatch |
 | `ErrRequiresApp` | 422 | Binding requires `app_guid` |
 | `ErrUnauthorized` | 401 | Authentication failure |

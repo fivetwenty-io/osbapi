@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.0.3
+
+### Fixed
+
+- `ErrUnauthorized` now answers 401, `ErrPlanQuotaExceeded` answers 422, and `ErrInvalidParameters` answers 400, each with the error's message as the `description`. They previously fell through to a 500, which contradicted the sentinel table in the README.
+
+- `ErrBindingAlreadyExists` now answers 409 when the broker returns it with an empty `BindResponse`, and the bind handler still answers 200 with the response when the broker returns a non-empty one. The same error from any other operation also answers 409 instead of 500.
+
 ## v2.0.2
 
 ### Changed
