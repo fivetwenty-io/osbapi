@@ -1,5 +1,15 @@
 # Changelog
 
+## v2.0.4
+
+### Added
+
+- `ErrInstanceAlreadyProvisioned` is a new sentinel a broker returns from `Provision` when the instance already exists, is fully provisioned, and the request is identical. The provision handler answers 200 with the returned `ProvisionResponse`, even when it is empty and encodes as `{}`, which a broker could not send before because `ErrInstanceAlreadyExists` answers 409 and a nil error answers 201 or 202.
+
+- A wrapped `ErrInstanceAlreadyProvisioned` is recognized with `errors.Is`. If it reaches the shared error mapping from any other operation it answers 409, the same as `ErrInstanceAlreadyExists`, and `IsConflict` does not report it because it signals success.
+
+- The example broker now returns `ErrInstanceAlreadyProvisioned` when an identical provision repeats.
+
 ## v2.0.3
 
 ### Fixed

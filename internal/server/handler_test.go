@@ -3,6 +3,8 @@ package server_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -133,6 +135,73 @@ func TestProvisionHandler_Sync(t *testing.T) {
 	assert.Equal(t, "https://dashboard.example.com", result.DashboardURL)
 	assert.Equal(t, "abc", broker.lastInstanceID)
 	assert.Equal(t, "svc-1", broker.lastProvisionReq.ServiceID)
+}
+
+func TestProvisionHandler_AlreadyProvisioned(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name        string
+		resp        osbapi.ProvisionResponse
+		err         error
+		wantBody    string
+		wantDashURL string
+	}{
+		{
+			name:     "empty response encodes as an empty object",
+			err:      osbapi.ErrInstanceAlreadyProvisioned,
+			wantBody: "{}",
+		},
+		{
+			name:        "dashboard URL is returned",
+			resp:        osbapi.ProvisionResponse{DashboardURL: "https://dashboard.example.com"},
+			err:         osbapi.ErrInstanceAlreadyProvisioned,
+			wantDashURL: "https://dashboard.example.com",
+		},
+		{
+			name:     "wrapped sentinel answers 200",
+			err:      fmt.Errorf("x: %w", osbapi.ErrInstanceAlreadyProvisioned),
+			wantBody: "{}",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			broker := &mockBroker{provisionResp: tt.resp, provisionErr: tt.err}
+			ts := newTestServer(t, broker)
+			defer ts.Close()
+
+			body := osbapi.ProvisionRequest{ServiceID: "svc-1", PlanID: "plan-1"}
+			resp := doRequest(t, http.MethodPut, ts.URL+"/v2/service_instances/abc", body)
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+			raw, err := io.ReadAll(resp.Body)
+			require.NoError(t, err)
+			resp.Body.Close()
+
+			if tt.wantBody != "" {
+				assert.JSONEq(t, tt.wantBody, string(raw))
+			}
+
+			var result osbapi.ProvisionResponse
+			require.NoError(t, json.Unmarshal(raw, &result))
+			assert.Equal(t, tt.wantDashURL, result.DashboardURL)
+		})
+	}
+}
+
+func TestProvisionHandler_InstanceAlreadyExistsConflicts(t *testing.T) {
+	t.Parallel()
+
+	broker := &mockBroker{provisionErr: osbapi.ErrInstanceAlreadyExists}
+	ts := newTestServer(t, broker)
+	defer ts.Close()
+
+	body := osbapi.ProvisionRequest{ServiceID: "svc-1", PlanID: "plan-1"}
+	resp := doRequest(t, http.MethodPut, ts.URL+"/v2/service_instances/abc", body)
+	assert.Equal(t, http.StatusConflict, resp.StatusCode)
 }
 
 func TestProvisionHandler_Async(t *testing.T) {

@@ -77,7 +77,7 @@ func TestInMemoryBroker_ProvisionIdempotent(t *testing.T) {
 	require.NoError(t, err)
 
 	resp2, _, err := b.Provision(ctx, instanceID, req, false)
-	require.NoError(t, err)
+	require.ErrorIs(t, err, osbapi.ErrInstanceAlreadyProvisioned)
 	assert.Equal(t, resp1.DashboardURL, resp2.DashboardURL)
 
 	// Provision with a different plan should fail.

@@ -276,6 +276,7 @@ func TestHandleError_SentinelStatuses_OtherOperations(t *testing.T) {
 		{"plan quota exceeded", osbapi.ErrPlanQuotaExceeded, http.StatusUnprocessableEntity},
 		{"invalid parameters", osbapi.ErrInvalidParameters, http.StatusBadRequest},
 		{"binding already exists", osbapi.ErrBindingAlreadyExists, http.StatusConflict},
+		{"instance already provisioned", osbapi.ErrInstanceAlreadyProvisioned, http.StatusConflict},
 	}
 
 	operations := []struct {

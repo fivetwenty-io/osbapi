@@ -79,8 +79,9 @@ func (b *InMemoryBroker) GetCatalog(_ context.Context) (*osbapi.Catalog, error) 
 }
 
 // Provision creates a new service instance. If the instance already exists with
-// the same plan, the response is idempotent (200 OK). If the plan differs, it
-// returns ErrInstanceAlreadyExists.
+// the same plan, it returns the existing response with
+// ErrInstanceAlreadyProvisioned, which the server answers with 200 OK. If the
+// plan differs, it returns ErrInstanceAlreadyExists.
 func (b *InMemoryBroker) Provision(
 	_ context.Context,
 	instanceID string,
@@ -94,7 +95,7 @@ func (b *InMemoryBroker) Provision(
 		if existing.PlanID == req.PlanID {
 			return osbapi.ProvisionResponse{
 				DashboardURL: existing.DashboardURL,
-			}, false, nil
+			}, false, osbapi.ErrInstanceAlreadyProvisioned
 		}
 
 		return osbapi.ProvisionResponse{}, false, osbapi.ErrInstanceAlreadyExists
