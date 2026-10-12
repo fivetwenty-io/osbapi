@@ -1,5 +1,15 @@
 # Changelog
 
+## v2.0.5
+
+### Security
+
+- The basic-auth middleware now compares the username and password in constant time. It hashes both the supplied and the configured values with SHA-256 and compares the digests with `crypto/subtle.ConstantTimeCompare`, so the time a request takes no longer depends on how many leading characters were right or on the length of either value. It always checks both fields, so a 401 never reveals which one was wrong.
+
+### Added
+
+- The repository now carries a `LICENSE` file with the full Apache License 2.0 text, which the README already named as the license.
+
 ## v2.0.4
 
 ### Added

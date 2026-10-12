@@ -306,4 +306,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, testing, and pull 
 
 ## License
 
-Apache 2.0
+Apache 2.0. The full text is in [LICENSE](LICENSE).
