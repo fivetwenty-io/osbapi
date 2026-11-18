@@ -364,6 +364,44 @@ func TestLastOperationHandler(t *testing.T) {
 	assert.Equal(t, "provision-op-1", broker.lastLastOpReq.Operation)
 }
 
+func TestLastOperationHandler_FailedFlags(t *testing.T) {
+	t.Parallel()
+
+	no, yes := false, true
+	broker := &mockBroker{
+		lastOpResp: osbapi.LastOperationResponse{
+			State:            osbapi.StateFailed,
+			InstanceUsable:   &no,
+			UpdateRepeatable: &yes,
+		},
+	}
+
+	ts := newTestServer(t, broker)
+	defer ts.Close()
+
+	resp := doRequest(t, http.MethodGet, ts.URL+"/v2/service_instances/abc/last_operation", nil)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	raw := decodeBody[map[string]any](t, resp)
+	assert.Equal(t, false, raw["instance_usable"])
+	assert.Equal(t, true, raw["update_repeatable"])
+}
+
+func TestLastOperationHandler_OmitsUnsetFlags(t *testing.T) {
+	t.Parallel()
+
+	broker := &mockBroker{lastOpResp: osbapi.LastOperationResponse{State: osbapi.StateFailed}}
+
+	ts := newTestServer(t, broker)
+	defer ts.Close()
+
+	resp := doRequest(t, http.MethodGet, ts.URL+"/v2/service_instances/abc/last_operation", nil)
+
+	raw := decodeBody[map[string]any](t, resp)
+	assert.NotContains(t, raw, "instance_usable")
+	assert.NotContains(t, raw, "update_repeatable")
+}
+
 // ---------------------------------------------------------------------------
 // Middleware: API version header
 // ---------------------------------------------------------------------------

@@ -205,6 +205,21 @@ for {
 }
 ```
 
+### Reporting a failed operation
+
+When a broker reports `StateFailed`, OSB API v2.17 lets it also say whether the instance is still usable and whether the update can be retried. Set `InstanceUsable` (update and deprovision) and `UpdateRepeatable` (update) on the `LastOperationResponse`. They are `*bool` fields, so an unset field is left out of the JSON and an explicit `false` is sent.
+
+```go
+usable, repeatable := false, true
+
+return osbapi.LastOperationResponse{
+    State:            osbapi.StateFailed,
+    Description:      "plan change failed",
+    InstanceUsable:   &usable,
+    UpdateRepeatable: &repeatable,
+}, nil
+```
+
 ## Package Overview
 
 | Package | Import Path | Purpose |

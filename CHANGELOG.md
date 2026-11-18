@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- `LastOperationResponse` gains the optional `InstanceUsable` and `UpdateRepeatable` fields, which OSB API v2.17 lets a broker include when the state is `failed`. `InstanceUsable` applies to update and deprovision, and `UpdateRepeatable` applies to update. Both are `*bool` with `omitempty`, so an unset field is left out of the JSON and an explicit `false` is still sent. The server handlers return the broker's response unchanged and the client decodes the fields, including from `PollInstanceUntilComplete` when the operation fails.
+
 ## v2.0.5
 
 ### Security

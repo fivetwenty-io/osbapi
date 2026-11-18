@@ -266,6 +266,45 @@ func TestPollLastOperation(t *testing.T) {
 	assert.Equal(t, "provisioning complete", resp.Description)
 }
 
+func TestPollLastOperation_FailedFlags(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"state":"failed","instance_usable":true,"update_repeatable":false}`))
+	}))
+	defer srv.Close()
+
+	c, err := client.NewWithBasicAuth(srv.URL, "user", "pass")
+	require.NoError(t, err)
+
+	resp, err := c.PollLastOperation(context.Background(), "inst-1", osbapi.LastOperationRequest{})
+	require.NoError(t, err)
+	require.NotNil(t, resp.InstanceUsable)
+	require.NotNil(t, resp.UpdateRepeatable)
+	assert.True(t, *resp.InstanceUsable)
+	assert.False(t, *resp.UpdateRepeatable)
+}
+
+func TestPollInstanceUntilComplete_FailedKeepsFlags(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"state":"failed","description":"x","instance_usable":false}`))
+	}))
+	defer srv.Close()
+
+	c, err := client.NewWithBasicAuth(srv.URL, "user", "pass")
+	require.NoError(t, err)
+
+	resp, err := c.PollInstanceUntilComplete(context.Background(), "inst-1", osbapi.PollConfig{})
+	require.Error(t, err)
+	require.NotNil(t, resp.InstanceUsable)
+	assert.False(t, *resp.InstanceUsable)
+	assert.Nil(t, resp.UpdateRepeatable)
+}
+
 func TestErrorResponse(t *testing.T) {
 	t.Parallel()
 

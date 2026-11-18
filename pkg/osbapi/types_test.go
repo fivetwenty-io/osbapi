@@ -174,3 +174,70 @@ func TestOperationState_Constants(t *testing.T) {
 	assert.Equal(t, osbapi.OperationState("succeeded"), osbapi.StateSucceeded)
 	assert.Equal(t, osbapi.OperationState("failed"), osbapi.StateFailed)
 }
+
+func TestLastOperationResponse_JSON_FailedFlags(t *testing.T) {
+	t.Parallel()
+
+	yes, no := true, false
+
+	tests := []struct {
+		name string
+		resp osbapi.LastOperationResponse
+		want string
+	}{
+		{
+			name: "both true",
+			resp: osbapi.LastOperationResponse{State: osbapi.StateFailed, InstanceUsable: &yes, UpdateRepeatable: &yes},
+			want: `{"state":"failed","instance_usable":true,"update_repeatable":true}`,
+		},
+		{
+			name: "both false",
+			resp: osbapi.LastOperationResponse{State: osbapi.StateFailed, InstanceUsable: &no, UpdateRepeatable: &no},
+			want: `{"state":"failed","instance_usable":false,"update_repeatable":false}`,
+		},
+		{
+			name: "only instance_usable",
+			resp: osbapi.LastOperationResponse{State: osbapi.StateFailed, InstanceUsable: &no},
+			want: `{"state":"failed","instance_usable":false}`,
+		},
+		{
+			name: "only update_repeatable",
+			resp: osbapi.LastOperationResponse{State: osbapi.StateFailed, UpdateRepeatable: &yes},
+			want: `{"state":"failed","update_repeatable":true}`,
+		},
+		{
+			name: "unset",
+			resp: osbapi.LastOperationResponse{State: osbapi.StateFailed, Description: "boom"},
+			want: `{"state":"failed","description":"boom"}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			data, err := json.Marshal(tt.resp)
+			require.NoError(t, err)
+			assert.JSONEq(t, tt.want, string(data))
+		})
+	}
+}
+
+func TestLastOperationResponse_Decode_FailedFlags(t *testing.T) {
+	t.Parallel()
+
+	var set osbapi.LastOperationResponse
+
+	require.NoError(t, json.Unmarshal(
+		[]byte(`{"state":"failed","instance_usable":false,"update_repeatable":true}`), &set))
+	require.NotNil(t, set.InstanceUsable)
+	require.NotNil(t, set.UpdateRepeatable)
+	assert.False(t, *set.InstanceUsable)
+	assert.True(t, *set.UpdateRepeatable)
+
+	var unset osbapi.LastOperationResponse
+
+	require.NoError(t, json.Unmarshal([]byte(`{"state":"failed"}`), &unset))
+	assert.Nil(t, unset.InstanceUsable)
+	assert.Nil(t, unset.UpdateRepeatable)
+}
